@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>US Macro Watch</title>
+<style>
+:root{--bg:#f6f7f9;--c:#fff;--ink:#14181f;--m:#5b6573;--l:#e3e7ec;--a:#0b5fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1116;--c:#171b22;--ink:#e8ebf0;--m:#9aa4b2;--l:#262c36;--a:#6ea0ff}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,sans-serif}
+.w{max-width:1000px;margin:auto;padding:20px 16px 48px}h1{font-family:Georgia,serif;margin:0}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.k,.card{background:var(--c);border:1px solid var(--l);border-radius:10px;padding:12px;margin-bottom:8px}
+.k small,.k span,.sub{color:var(--m);font-size:.8rem;display:block}.k b{font-size:1.4rem}
+.tag{color:var(--a);font-size:.7rem;border:1px solid var(--a);border-radius:99px;padding:0 8px;margin-right:6px}
+a{color:var(--a)}#an{white-space:pre-wrap}
+</style></head><body><div class="w">
+<h1>US Macro Watch</h1><div class="sub" id="up">Memuat data…</div>
+<h2>Indikator</h2><div class="g" id="k"></div>
+<h2>Analisis</h2><div class="card"><div id="an"></div><span class="sub">Bukan nasihat investasi.</span></div>
+<h2>Berita</h2><div id="news"></div>
+<p class="sub">Sumber: FRED (St. Louis Fed), Federal Reserve, BLS, Google News RSS. Data di-refresh otomatis (cache ±1 jam).</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function el(tag,txt,cls){const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
+function kpi(l,v,n){const d=el("div",null,"k");d.append(el("small",l),el("b",v),el("span",n||""));return d}
+fetch("/api/macro").then(r=>r.json()).then(j=>{
+  if(j.error){$("up").textContent="Gagal memuat: "+j.error;return}
+  const d=j.d;
+  $("up").textContent="Diperbarui: "+new Date(j.updated).toLocaleString("id-ID");
+  $("k").append(
+    kpi("Fed funds",d.fedLo.toFixed(2)+"–"+d.fedHi.toFixed(2)+"%"),
+    kpi("CPI yoy",d.cpi.toFixed(1)+"%",d.cpiDate),
+    kpi("Core CPI yoy",d.core.toFixed(1)+"%"),
+    kpi("Pengangguran",d.unemp.toFixed(1)+"%","sebelumnya "+d.unempPrev.toFixed(1)+"%"),
+    kpi("Payrolls (perubahan)",(d.nfp>=0?"+":"")+Math.round(d.nfp)+" rb"),
+    kpi("PDB QoQ ann.",d.gdp.toFixed(1)+"%",d.gdpDate),
+    kpi("Yield 10Y",d.y10.toFixed(2)+"%"),
+    kpi("Bensin AS","$"+d.gas.toFixed(2)+"/gal"));
+  $("an").textContent=j.analysis;
+  j.items.forEach(i=>{const c=el("div",null,"card"),a=el("a",i.title);
+    if(/^https?:/.test(i.link)){a.href=i.link;a.target="_blank";a.rel="noopener"}
+    c.append(el("span",i.src,"tag"),a);$("news").append(c)});
+}).catch(()=>{$("up").textContent="Gagal memuat data."});
+</script></body></html>
